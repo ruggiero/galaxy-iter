@@ -1,0 +1,35 @@
+# M_halo
+20
+
+# M_disk
+5
+
+# M_bulge
+1
+
+# M_gas
+0.5
+
+# N_halo
+400000
+
+# N_disk
+100000
+
+# N_bulge
+20000
+
+# N_gas
+10000
+
+# a_halo, reff = 50
+20.71
+
+# a_bulge, reff = 3
+1.24
+
+# Rd (radial scale factor for the disk)
+3.5
+
+# z0 (height scale factor for the disk)
+0.7
