@@ -1,3 +1,6 @@
+This documentation is incomplete, hang in there
+
+
 ## About
 
 This code uses the algorithm found in Radionov, Athanassoula & Sotnikova (2009)
