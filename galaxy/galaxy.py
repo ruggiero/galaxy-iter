@@ -142,8 +142,10 @@ def transfer_vels(new_data, old_data, c):
       nvr = 0
     else:
       nvr = nvy*sin(nphi) + nvx*cos(nphi)
-    nvphi = nvy*cos(nphi) - nvx*sin(nphi)
- 
+    if c == 'gas' or c == 'disk':
+      nvphi = abs(nvy*cos(nphi) - nvx*sin(nphi))
+    else:
+      nvphi = nvy*cos(nphi) - nvx*sin(nphi)
     old_data['vel'][c][j] = (nvr*cos(phi) - nvphi*sin(phi), nvr*sin(phi) + nvphi*cos(phi), nvz)
 
 
