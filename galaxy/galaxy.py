@@ -78,16 +78,6 @@ def realize_galaxy(Npart, first=False):
   return {'pos': coords, 'vel': vels}
 
 
-def update_positions(galaxy_data, c):
-  if c == 'gas':
-    galaxy_data['pos'][c] = set_disk_positions(Npart['gas'], 0)
-  elif c == 'halo':
-    galaxy_data['pos'][c] = sample_dehnen(Npart['dm'], M_halo, a_halo)
-  elif c == 'disk':
-    galaxy_data['pos'][c] = set_disk_positions(Npart['disk'], z0)
-  elif c == 'bulge':
-    galaxy_data['pos'][c] = sample_dehnen(Npart['bulge'], M_halo, a_halo)
-  return galaxy_data
 
 def rotation_velocity(pos):
   rho = (pos[0]**2 + pos[1]**2)**0.5
@@ -117,7 +107,6 @@ def iterate(galaxy_data, c, iterations):
     call(['rm temp.dat temp/*'], shell=True)
     new_data = {'pos': new_coords, 'vel': new_vels}
     correct_cm_vel(new_data)
-    galaxy_data = update_positions(galaxy_data, c)
     transfer_vels(new_data, galaxy_data, c)
     if c == 'gas':
       transfer_gas_dist(new_data, galaxy_data)
