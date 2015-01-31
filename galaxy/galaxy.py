@@ -21,10 +21,10 @@ G = 43007.1
 
 def main():
   init()
-  galaxy_data = realize_galaxy(N_temp, first=True)
   final_galaxy = realize_galaxy({'gas': N_gas, 'dm': N_halo, 'disk': N_disk, 'bulge': N_bulge})
   for i in ['gas', 'dm', 'disk', 'bulge']:
-    iterate(galaxy_data, i, 100)
+    galaxy_data = realize_galaxy(N_temp, first=True)
+    galaxy_data = iterate(galaxy_data, i, 100)
     transfer_vels(galaxy_data, final_galaxy, i)
     if i == 'gas':
       transfer_gas_dist(galaxy_data, final_galaxy)
@@ -110,7 +110,7 @@ def iterate(galaxy_data, c, iterations):
     transfer_vels(new_data, galaxy_data, c)
     if c == 'gas':
       transfer_gas_dist(new_data, galaxy_data)
-  return new_data
+  return galaxy_data
 
 
 def correct_cm_vel(galaxy_data):
