@@ -34,7 +34,7 @@ PeriodicBoundariesOn     0
 %  Caracteristics of run
 
 TimeBegin           0.0        % Begin of the simulation
-TimeMax	            0.2        % End of the simulation
+TimeMax	            0.3        % End of the simulation
 
 Omega0	              0
 OmegaLambda           0
@@ -45,7 +45,7 @@ BoxSize               0
 % Output frequency
 
 TimeBetSnapshot        100
-TimeOfFirstSnapshot    0.2
+TimeOfFirstSnapshot    0.3
 
 CpuTimeBetRestartFile     360000  ; here in seconds %= 100 hour
 TimeBetStatistics         0.001
@@ -82,8 +82,8 @@ TreeDomainUpdateFrequency    0.1
 DesNumNgb              64
 MaxNumNgbDeviation     2
 ArtBulkViscConst       0.8          % 0.8
-InitGasTemp            0          % always ignored if set to 0 
-MinGasTemp             10000
+InitGasTemp            10000          % always ignored if set to 0 
+MinGasTemp             100
 
 
 % Memory allocation

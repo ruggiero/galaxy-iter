@@ -56,8 +56,8 @@ def init():
   M_halo, M_disk, M_bulge, M_gas = (float(i[0]) for i in vars_[0:4])
   N_halo, N_disk, N_bulge, N_gas = (float(i[0]) for i in vars_[4:8])
   a_halo, a_bulge, Rd, z0 = (float(i[0]) for i in vars_[8:12])
-  #N_temp = {'gas': 1e4, 'dm': 5e4, 'disk': 2e4, 'bulge': 2e4}
-  N_temp = {'gas': 1e3, 'dm': 5e3, 'disk': 2e3, 'bulge': 2e3}
+  N_temp = {'gas': 1e4, 'dm': 5e4, 'disk': 2e4, 'bulge': 2e4}
+  #N_temp = {'gas': 1e3, 'dm': 5e3, 'disk': 2e3, 'bulge': 2e3}
 
 
 def realize_galaxy(Npart, first=False):
@@ -76,7 +76,6 @@ def realize_galaxy(Npart, first=False):
   vels['dm'] = np.zeros((Npart['dm'], 3))
   vels['bulge'] = np.zeros((Npart['bulge'], 3))
   return {'pos': coords, 'vel': vels}
-
 
 
 def rotation_velocity(pos):
