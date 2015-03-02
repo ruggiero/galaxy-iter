@@ -106,7 +106,10 @@ def iterate(galaxy_data, c, iterations):
     call(['rm temp.dat temp/*'], shell=True)
     new_data = {'pos': new_coords, 'vel': new_vels}
     correct_cm_vel(new_data)
-    transfer_vels(new_data, galaxy_data, c)
+    if (c == 'halo' or c == 'bulge') and i < 50:
+      transfer_vels_spherical(new_data, galaxy_data, c)
+    else:
+      transfer_vels_cyl(new_data, galaxy_data, c)
     if c == 'gas':
       transfer_gas_dist(new_data, galaxy_data)
   return galaxy_data
@@ -120,7 +123,7 @@ def correct_cm_vel(galaxy_data):
 
 
 # Transfers the velocity using cylindrical coordinates
-def transfer_vels(new_data, old_data, c):
+def transfer_vels_cyl(new_data, old_data, c):
   # Number of times each particle in the new model has been used
   N_used = np.zeros(N_temp[c])
   rhos = (new_data['pos'][c][:,0]**2 + new_data['pos'][c][:,1]**2)**0.5
@@ -146,6 +149,22 @@ def transfer_vels(new_data, old_data, c):
     else:
       nvphi = nvy*cos(nphi) - nvx*sin(nphi)
     old_data['vel'][c][j] = (nvr*cos(phi) - nvphi*sin(phi), nvr*sin(phi) + nvphi*cos(phi), nvz)
+
+
+# Transfers the velocity using spherical coordinates
+def transfer_vels_spherical(new_data, old_data, c):
+  # Number of times each particle in the new model has been used
+  N_used = np.zeros(N_temp[c])
+  radii = (new_data['pos'][c][:,0]**2 + new_data['pos'][c][:,1]**2 + new_data['pos'][c][:,2]**2)**0.5
+  tree = KDTree(np.vstack(radii))
+  for j, p in enumerate(old_data['pos'][c]):
+    b = find_best_neighbor([np.linalg.norm(p)], tree, N_used)
+    N_used[b] += 1
+    nv = np.linalg.norm(new_data['vel'][c][b])
+    # Choosing a random direction
+    theta = np.arccos(nprand.random()*2 - 1)
+    phi = 2 * np.pi * nprand.random()
+    old_data['vel'][c][j] = (nv * np.sin(theta) * np.cos(phi), nv * np.sin(theta) * np.sin(phi), nv * np.cos(theta))
 
 
 def transfer_gas_dist(new_data, old_data):
