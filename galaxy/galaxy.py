@@ -11,6 +11,7 @@ from scipy.special import i0, i1, k0, k1
 from bisect import bisect_left
 from argparse import ArgumentParser as parser
 from subprocess import call
+import copy
 
 from snapwrite import process_input, write_snapshot
 from pygadgetreader import *
@@ -21,11 +22,12 @@ G = 43007.1
 
 def main():
   init()
-  final_galaxy = realize_galaxy({'gas': N_gas, 'dm': N_halo, 'disk': N_disk, 'bulge': N_bulge})
+  final_galaxy = realize_galaxy({'gas': N_gas, 'dm': N_dm, 'disk': N_disk, 'bulge': N_bulge})
   for i in ['gas', 'dm', 'disk', 'bulge']:
     galaxy_data = realize_galaxy(N_temp, first=True)
-    galaxy_data = iterate(galaxy_data, i, 100)
-    transfer_vels(galaxy_data, final_galaxy, i)
+    correct_cm_vel(galaxy_data)
+    galaxy_data = iterate(galaxy_data, i, 50)
+    transfer_vels_cyl(galaxy_data, final_galaxy, i)
     if i == 'gas':
       transfer_gas_dist(galaxy_data, final_galaxy)
   correct_cm_vel(final_galaxy)
@@ -33,11 +35,11 @@ def main():
 
 
 def init():
-  global M_halo, M_disk, M_bulge, M_gas
-  global N_halo, N_disk, N_bulge, N_gas
-  global a_halo, a_bulge, Rd, z0
+  global M_dm, M_disk, M_bulge, M_gas
+  global N_dm, N_disk, N_bulge, N_gas
+  global a_dm, a_bulge, Rd, z0
   global N_CORES, output
-  global N_temp
+  global N_temp, N_range
   flags = parser(description="Description.")
   flags.add_argument('-o', help='The name of the output file.',
                      metavar="init.dat", default="init.dat")
@@ -53,20 +55,24 @@ def init():
     exit(0)
 
   vars_ = process_input("galaxy_param.txt")
-  M_halo, M_disk, M_bulge, M_gas = (float(i[0]) for i in vars_[0:4])
-  N_halo, N_disk, N_bulge, N_gas = (float(i[0]) for i in vars_[4:8])
-  a_halo, a_bulge, Rd, z0 = (float(i[0]) for i in vars_[8:12])
-  N_temp = {'gas': 1e4, 'dm': 5e4, 'disk': 2e4, 'bulge': 2e4}
+  M_dm, M_disk, M_bulge, M_gas = (float(i[0]) for i in vars_[0:4])
+  N_dm, N_disk, N_bulge, N_gas = (float(i[0]) for i in vars_[4:8])
+  a_dm, a_bulge, Rd, z0 = (float(i[0]) for i in vars_[8:12])
+  N_temp = {'gas': 1e4, 'dm': 1e5, 'disk': 2e4, 'bulge': 2e4}
   #N_temp = {'gas': 1e3, 'dm': 5e3, 'disk': 2e3, 'bulge': 2e3}
+  N_range = {'gas': np.linspace(N_temp['gas'], N_gas, 20), 
+             'dm': np.linspace(N_temp['dm'], N_dm, 20), 
+             'disk': np.linspace(N_temp['disk'], N_disk, 20), 
+             'bulge': np.linspace(N_temp['bulge'], N_bulge, 20)}
 
 
 def realize_galaxy(Npart, first=False):
   coords = {}
   vels = {}
   coords['gas'] = set_disk_positions(Npart['gas'], 0)
-  coords['dm'] = sample_dehnen(Npart['dm'], M_halo, a_halo)
+  coords['dm'] = sample_dehnen(Npart['dm'], M_dm, a_dm)
   coords['disk'] = set_disk_positions(Npart['disk'], z0)
-  coords['bulge'] = sample_dehnen(Npart['bulge'], M_halo, a_halo)
+  coords['bulge'] = sample_dehnen(Npart['bulge'], M_bulge, a_bulge)
   if first:
     vels['gas'] = np.array([rotation_velocity(i) for i in coords['gas']])
     vels['disk'] = np.array([rotation_velocity(i) for i in coords['disk']])
@@ -80,11 +86,11 @@ def realize_galaxy(Npart, first=False):
 
 def rotation_velocity(pos):
   rho = (pos[0]**2 + pos[1]**2)**0.5
-  phi = calculate_phi(pos[0], pos[1])
+  phi = np.arctan2(pos[1], pos[0])
   y = rho/(2*Rd)
-  sigma0 = M_halo / (2*pi*Rd**2)
+  sigma0 = M_dm / (2*pi*Rd**2)
   speed = (4*pi*G*sigma0*y**2*(i0(y)*k0(y) - i1(y)*k1(y)) +
-           (G*M_halo*rho)/(rho+a_halo)**2 + (G*M_bulge*rho)/(rho+a_bulge)**2)**0.5
+           (G*M_dm*rho)/(rho+a_dm)**2 + (G*M_bulge*rho)/(rho+a_bulge)**2)**0.5
   return (-speed*sin(phi), speed*cos(phi), 0)
 
 
@@ -106,26 +112,41 @@ def iterate(galaxy_data, c, iterations):
     call(['rm temp.dat temp/*'], shell=True)
     new_data = {'pos': new_coords, 'vel': new_vels}
     correct_cm_vel(new_data)
-    if (c == 'halo' or c == 'bulge') and i < 50:
-      transfer_vels_spherical(new_data, galaxy_data, c)
-    else:
-      transfer_vels_cyl(new_data, galaxy_data, c)
+    if i > 30 and N_temp[c] != N_range[c][i-30]:
+      update_positions(galaxy_data, c, N_range[c][i-30])
+    transfer_vels_cyl(new_data, galaxy_data, c)
     if c == 'gas':
       transfer_gas_dist(new_data, galaxy_data)
+    correct_cm_vel(galaxy_data)
   return galaxy_data
 
 
 def correct_cm_vel(galaxy_data):
-  coords = np.concatenate((galaxy_data['pos'].values()))
-  velcm = np.sum(coords) / len(coords)
   for key in galaxy_data['vel']:
-    galaxy_data['vel'][key] -= velcm
+    galaxy_data['vel'][key] -= np.average(galaxy_data['vel'][key], axis=0)
+
+
+def update_positions(galaxy_data, c, N):
+  if c == 'gas':
+    galaxy_data['pos'][c] = set_disk_positions(N, 0)
+    galaxy_data['vel'][c] = np.zeros((N, 3))
+  elif c == 'dm':
+    galaxy_data['pos'][c] = sample_dehnen(N, M_dm, a_dm)
+    galaxy_data['vel'][c] = np.zeros((N, 3))
+  elif c == 'disk':
+    galaxy_data['pos'][c] = set_disk_positions(N, z0)
+    galaxy_data['vel'][c] = np.zeros((N, 3))
+  elif c == 'bulge':
+    galaxy_data['pos'][c] = sample_dehnen(N, M_bulge, a_bulge)
+    galaxy_data['vel'][c] = np.zeros((N, 3))
+  return galaxy_data
+
 
 
 # Transfers the velocity using cylindrical coordinates
 def transfer_vels_cyl(new_data, old_data, c):
   # Number of times each particle in the new model has been used
-  N_used = np.zeros(N_temp[c])
+  N_used = np.zeros(len(new_data['pos'][c]))
   rhos = (new_data['pos'][c][:,0]**2 + new_data['pos'][c][:,1]**2)**0.5
   cyl_data = np.dstack((rhos, abs(new_data['pos'][c][:,2])))[0]
   tree = KDTree(cyl_data)
@@ -138,8 +159,8 @@ def transfer_vels_cyl(new_data, old_data, c):
     vx, vy, vz = old_data['vel'][c][j]
     nvx, nvy, nvz = new_data['vel'][c][b]
 
-    phi = calculate_phi(x, y)
-    nphi = calculate_phi(nx, ny)
+    phi = np.arctan2(y, x)
+    nphi = np.arctan2(ny, nx)
     if c == 'gas':
       nvr = 0
     else:
@@ -167,6 +188,7 @@ def transfer_vels_spherical(new_data, old_data, c):
     old_data['vel'][c][j] = (nv * np.sin(theta) * np.cos(phi), nv * np.sin(theta) * np.sin(phi), nv * np.cos(theta))
 
 
+# podia juntar isso na outra em uma etapa so, tem overload do krl aqui
 def transfer_gas_dist(new_data, old_data):
   N_used = np.zeros(N_temp['gas'])
   rhos = (new_data['pos']['gas'][:,0]**2 + new_data['pos']['gas'][:,1]**2)**0.5
@@ -190,18 +212,6 @@ def find_best_neighbor(pos, tree, N_used):
       best = p
       distance = closest[0][i]
   return best    
-
-
-def calculate_phi(x, y):
-  if(x > 0 and y > 0):
-    phi = arctan(y/x)
-  elif(x < 0 and y > 0):
-    phi = pi - arctan(-y/x)
-  elif(x < 0 and y < 0):
-    phi = pi + arctan(y/x)
-  elif(x > 0 and y < 0):
-    phi = 2 * pi - arctan(-y/x)
-  return phi
 
 
 def dehnen_inverse_cumulative(Mc, M, a, core):
@@ -271,13 +281,13 @@ def write_input_file(galaxy_data, name, null_gas_ids=False):
     ids = np.arange(1, sum(Npart)+1, 1)
   m_gas = np.empty(Npart[0])
   m_gas.fill(M_gas/Npart[0])
-  m_halo = np.empty(Npart[1])
-  m_halo.fill(M_halo/Npart[1])
+  m_dm = np.empty(Npart[1])
+  m_dm.fill(M_dm/Npart[1])
   m_disk = np.empty(Npart[2])
   m_disk.fill(M_disk/Npart[2])
   m_bulge = np.empty(Npart[3])
-  m_bulge.fill(M_disk/Npart[3])
-  masses = np.concatenate((m_gas, m_halo, m_disk, m_bulge))
+  m_bulge.fill(M_bulge/Npart[3])
+  masses = np.concatenate((m_gas, m_dm, m_disk, m_bulge))
   U = np.zeros(Npart[0])
   rhos = np.zeros(Npart[0])
   smooths = np.zeros(Npart[0])
