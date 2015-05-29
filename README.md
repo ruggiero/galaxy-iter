@@ -10,7 +10,7 @@ and put them in the galaxy/ folder, with the names gadget_0, gadget_1,
 gadget_2 and gadget_3. They respectively only allow gas particles,
 dark matter particles, disk particles and bulge particles to move.
 I manually updated GADGET-2 for that.  Additionally, gadget_0 must be
-compiled with the -DISOTHERMAL flag._
+compiled with the -DISOTHERMAL flag.
 
 This code is highly experimental, and I don't use it anymore for three
 reasons: it takes a long time to generate the initial conditions; it
