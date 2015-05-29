@@ -27,9 +27,9 @@ def main():
     galaxy_data = realize_galaxy(N_temp, first=True)
     correct_cm_vel(galaxy_data)
     galaxy_data = iterate(galaxy_data, i, 50)
-    transfer_vels_cyl(galaxy_data, final_galaxy, i)
     if i == 'gas':
       transfer_gas_dist(galaxy_data, final_galaxy)
+    transfer_vels_cyl(galaxy_data, final_galaxy, i)
   correct_cm_vel(final_galaxy)
   write_input_file(final_galaxy, output)
 
@@ -58,8 +58,7 @@ def init():
   M_dm, M_disk, M_bulge, M_gas = (float(i[0]) for i in vars_[0:4])
   N_dm, N_disk, N_bulge, N_gas = (float(i[0]) for i in vars_[4:8])
   a_dm, a_bulge, Rd, z0 = (float(i[0]) for i in vars_[8:12])
-  N_temp = {'gas': 1e4, 'dm': 1e5, 'disk': 2e4, 'bulge': 2e4}
-  #N_temp = {'gas': 1e3, 'dm': 5e3, 'disk': 2e3, 'bulge': 2e3}
+  N_temp = {'gas': 1e4, 'dm': 5e4, 'disk': 2e4, 'bulge': 2e4}
   N_range = {'gas': np.linspace(N_temp['gas'], N_gas, 20), 
              'dm': np.linspace(N_temp['dm'], N_dm, 20), 
              'disk': np.linspace(N_temp['disk'], N_disk, 20), 
@@ -112,11 +111,11 @@ def iterate(galaxy_data, c, iterations):
     call(['rm temp.dat temp/*'], shell=True)
     new_data = {'pos': new_coords, 'vel': new_vels}
     correct_cm_vel(new_data)
-    if i > 30 and N_temp[c] != N_range[c][i-30]:
+    if i > 30 and N_temp[c] > N_range[c][i-30]:
       update_positions(galaxy_data, c, N_range[c][i-30])
-    transfer_vels_cyl(new_data, galaxy_data, c)
     if c == 'gas':
       transfer_gas_dist(new_data, galaxy_data)
+    transfer_vels_cyl(new_data, galaxy_data, c)
     correct_cm_vel(galaxy_data)
   return galaxy_data
 
@@ -158,9 +157,9 @@ def transfer_vels_cyl(new_data, old_data, c):
     nx, ny, nz = new_data['pos'][c][b]
     vx, vy, vz = old_data['vel'][c][j]
     nvx, nvy, nvz = new_data['vel'][c][b]
-
     phi = np.arctan2(y, x)
     nphi = np.arctan2(ny, nx)
+
     if c == 'gas':
       nvr = 0
     else:
@@ -188,7 +187,7 @@ def transfer_vels_spherical(new_data, old_data, c):
     old_data['vel'][c][j] = (nv * np.sin(theta) * np.cos(phi), nv * np.sin(theta) * np.sin(phi), nv * np.cos(theta))
 
 
-# podia juntar isso na outra em uma etapa so, tem overload do krl aqui
+# It would be optimal to do this along with the velocity transfer
 def transfer_gas_dist(new_data, old_data):
   N_used = np.zeros(N_temp['gas'])
   rhos = (new_data['pos']['gas'][:,0]**2 + new_data['pos']['gas'][:,1]**2)**0.5
@@ -265,7 +264,6 @@ def disk_height_inverse_cumulative(frac, z0):
   return 0.5 * z0 * np.log(frac/(1-frac))
 
 
-# Npart...
 def write_input_file(galaxy_data, name, null_gas_ids=False):
   Npart = [len(galaxy_data['pos']['gas']), len(galaxy_data['pos']['dm']),
     len(galaxy_data['pos']['disk']), len(galaxy_data['pos']['bulge']), 0, 0]
