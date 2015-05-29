@@ -15,7 +15,7 @@ compiled with the -DISOTHERMAL flag.
 This code is highly experimental, and I don't use it anymore for three
 reasons: it takes a long time to generate the initial conditions; it
 has an unidentified bug which makes halo and bulge particles accumulate
-around the z=0 axis once the galaxy is simulated; and I have another code
+around the z axis once the galaxy is simulated; and I have another code
 that just works™, which is available in the galaxy-jeans repository.
 
 
