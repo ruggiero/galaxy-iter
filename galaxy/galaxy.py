@@ -56,7 +56,7 @@ def init():
 
   vars_ = process_input("galaxy_param.txt")
   M_dm, M_disk, M_bulge, M_gas = (float(i[0]) for i in vars_[0:4])
-  N_dm, N_disk, N_bulge, N_gas = (float(i[0]) for i in vars_[4:8])
+  N_dm, N_disk, N_bulge, N_gas = (int(i[0]) for i in vars_[4:8])
   a_dm, a_bulge, Rd, z0 = (float(i[0]) for i in vars_[8:12])
   N_temp = {'gas': 1e4, 'dm': 5e4, 'disk': 2e4, 'bulge': 2e4}
   N_range = {'gas': np.linspace(N_temp['gas'], N_gas, 20), 
