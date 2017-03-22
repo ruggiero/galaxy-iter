@@ -17,7 +17,7 @@ from snapwrite import process_input, write_snapshot
 from pygadgetreader import *
 
 
-G = 43007.1
+G = 44920.0
 
 
 def main():
