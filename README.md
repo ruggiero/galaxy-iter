@@ -16,7 +16,7 @@ This code is highly experimental, and I don't use it anymore for three
 reasons: it takes a long time to generate the initial conditions; it
 has an unidentified bug which makes halo and bulge particles accumulate
 around the z axis once the galaxy is simulated; and I have another code
-that just works™, which is available in the galaxy-jeans repository.
+that just works™, which is available in the galstep repository.
 
 
 ## Required libraries
@@ -41,8 +41,8 @@ that just works™, which is available in the galaxy-jeans repository.
 ## Author
 
     Rafael Ruggiero
-    Undergraduate student at Universidade de São Paulo (USP), Brazil
-    Contact: bluewhale [at] cecm.usp.br
+    PhD student at Universidade de São Paulo (USP), Brazil
+    Contact: rafael.ruggiero [at] usp.br
 
 
 ## Disclaimer
