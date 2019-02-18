@@ -38,13 +38,6 @@ that just works™, which is available in the [galstep](https://github.com/ruggi
       -cores CORES  The number of cores to use.
 
 
-## Author
-
-    Rafael Ruggiero
-    PhD student at Universidade de São Paulo (USP), Brazil
-    Contact: rafael.ruggiero [at] usp.br
-
-
 ## Disclaimer
 
 Feel free to use this code in your work, but please link this page
